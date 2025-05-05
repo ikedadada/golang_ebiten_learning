@@ -8,8 +8,10 @@ import (
 )
 
 type game struct {
-	bg     *ebiten.Image
-	person *ebiten.Image
+	bg        *ebiten.Image
+	person    *ebiten.Image
+	cat       *ebiten.Image
+	messageBG *ebiten.Image
 }
 
 func newGame() (*game, error) {
@@ -24,6 +26,17 @@ func newGame() (*game, error) {
 		return nil, err
 	}
 	g.person = img
+	img, _, err = ebitenutil.NewImageFromFile("assets/cat.png")
+	if err != nil {
+		return nil, err
+	}
+	g.cat = img
+
+	img, _, err = ebitenutil.NewImageFromFile("assets/message-bg.png")
+	if err != nil {
+		return nil, err
+	}
+	g.messageBG = img
 	return g, nil
 }
 
@@ -37,7 +50,17 @@ func (g *game) Draw(screen *ebiten.Image) {
 	screen.DrawImage(g.bg, op)
 
 	op = &ebiten.DrawImageOptions{}
+	op.GeoM.Scale(-1, 1)
+	op.GeoM.Translate(float64(screen.Bounds().Dx()), 0)
 	screen.DrawImage(g.person, op)
+
+	op = &ebiten.DrawImageOptions{}
+	screen.DrawImage(g.cat, op)
+
+	op = &ebiten.DrawImageOptions{}
+	op.GeoM.Scale(float64(screen.Bounds().Dx())/float64(g.messageBG.Bounds().Dx()), float64(screen.Bounds().Dy()/3)/float64(g.messageBG.Bounds().Dy()))
+	op.GeoM.Translate(0, float64(screen.Bounds().Dy()*2/3))
+	screen.DrawImage(g.messageBG, op)
 
 	ebitenutil.DebugPrint(screen, "Hello, World!")
 }
