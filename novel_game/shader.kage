@@ -1,0 +1,10 @@
+//kage:unit pixels
+
+package main
+
+func Fragment(dstPos vec4, srcPos vec2, color vec4) vec4 {
+    r := imageSrc0At(srcPos - vec2(8,8)).r
+    g := imageSrc0At(srcPos).g
+    b := imageSrc0At(srcPos + vec2(8,8)).b
+    return vec4(r, g, b, 1)
+}

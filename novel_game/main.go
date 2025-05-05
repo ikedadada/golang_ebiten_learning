@@ -1,6 +1,7 @@
 package main
 
 import (
+	_ "embed"
 	_ "image/jpeg"
 
 	"github.com/hajimehoshi/ebiten/v2"
@@ -68,6 +69,28 @@ func (g *game) Draw(screen *ebiten.Image) {
 
 func (g *game) Layout(outsideWidth, outsideHeight int) (int, int) {
 	return outsideWidth, outsideHeight
+}
+
+//go:embed shader.kage
+var shader1Src []byte
+var (
+	postEffectShader *ebiten.Shader
+)
+
+func (g *game) DrawFinalScreen(screen ebiten.FinalScreen, offscreen *ebiten.Image, geoM ebiten.GeoM) {
+	if postEffectShader == nil {
+		s, err := ebiten.NewShader(shader1Src)
+		if err != nil {
+			panic(err)
+		}
+		postEffectShader = s
+	}
+
+	op := &ebiten.DrawRectShaderOptions{}
+	op.Images[0] = offscreen
+	op.GeoM = geoM
+	b := offscreen.Bounds()
+	screen.DrawRectShader(b.Dx(), b.Dy(), postEffectShader, op)
 }
 
 func main() {
