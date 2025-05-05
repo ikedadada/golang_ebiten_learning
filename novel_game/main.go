@@ -60,6 +60,7 @@ func (g *game) Draw(screen *ebiten.Image) {
 	op = &ebiten.DrawImageOptions{}
 	op.GeoM.Scale(float64(screen.Bounds().Dx())/float64(g.messageBG.Bounds().Dx()), float64(screen.Bounds().Dy()/3)/float64(g.messageBG.Bounds().Dy()))
 	op.GeoM.Translate(0, float64(screen.Bounds().Dy()*2/3))
+	op.ColorScale.ScaleAlpha(0.5)
 	screen.DrawImage(g.messageBG, op)
 
 	ebitenutil.DebugPrint(screen, "Hello, World!")
