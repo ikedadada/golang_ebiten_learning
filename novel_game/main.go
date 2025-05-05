@@ -1,7 +1,8 @@
 package main
 
 import (
-	_ "embed"
+	"embed"
+	"image"
 	_ "image/jpeg"
 
 	"github.com/hajimehoshi/ebiten/v2"
@@ -15,25 +16,41 @@ type game struct {
 	messageBG *ebiten.Image
 }
 
+//go:embed assets/*
+var fsys embed.FS
+
+func loadImage(path string) (*ebiten.Image, error) {
+	f, err := fsys.Open(path)
+	if err != nil {
+		return nil, err
+	}
+	defer f.Close()
+	i, _, err := image.Decode(f)
+	if err != nil {
+		return nil, err
+	}
+	return ebiten.NewImageFromImage(i), nil
+}
+
 func newGame() (*game, error) {
 	g := &game{}
-	img, _, err := ebitenutil.NewImageFromFile("assets/bg.jpg")
+	img, err := loadImage("assets/bg.jpg")
 	if err != nil {
 		return nil, err
 	}
 	g.bg = img
-	img, _, err = ebitenutil.NewImageFromFile("assets/person.png")
+	img, err = loadImage("assets/person.png")
 	if err != nil {
 		return nil, err
 	}
 	g.person = img
-	img, _, err = ebitenutil.NewImageFromFile("assets/cat.png")
+	img, err = loadImage("assets/cat.png")
 	if err != nil {
 		return nil, err
 	}
 	g.cat = img
 
-	img, _, err = ebitenutil.NewImageFromFile("assets/message-bg.png")
+	img, err = loadImage("assets/message-bg.png")
 	if err != nil {
 		return nil, err
 	}
