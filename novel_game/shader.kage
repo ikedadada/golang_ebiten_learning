@@ -3,8 +3,31 @@
 package main
 
 func Fragment(dstPos vec4, srcPos vec2, color vec4) vec4 {
-    r := imageSrc0At(srcPos - vec2(8,8)).r
-    g := imageSrc0At(srcPos).g
-    b := imageSrc0At(srcPos + vec2(8,8)).b
-    return vec4(r, g, b, 1)
+    // r := imageSrc0At(srcPos - vec2(8,8)).r
+    // g := imageSrc0At(srcPos).g
+    // b := imageSrc0At(srcPos + vec2(8,8)).b
+    // return vec4(r, g, b, 1)
+
+    // カーブ
+    uv := (srcPos - imageSrc0Origin()) / imageSrc0Size()
+    uv = uv*2 - 1
+    uv.x *= 1 + uv.y*uv.y*0.031
+    uv.y *= 1 + uv.x*uv.x*0.041
+    uv = uv/2 + 0.5
+
+    // 滲み・輝き
+    pos := uv*imageSrc0Size() + imageSrc0Origin()
+    clr := imageSrc0At(pos)
+    blur := vec3(0)
+    for i:= -4; i < 4; i++ {
+        blur += imageSrc0At(pos + vec2(float(i), 1)).rgb
+        blur += imageSrc0At(pos - vec2(1, float(i))).rgb
+    }
+    blur /= 16
+    glow := vec3(1) - exp(-blur)
+    clr = vec4(mix(blur + glow,clr.rgb,0.5), clr.a)
+
+    // 走査線
+    t := abs(sin(pos.y) * 0.5 * 0.75)
+    return clr * (1-t)
 }
