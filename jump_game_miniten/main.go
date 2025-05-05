@@ -1,6 +1,7 @@
 package main
 
 import (
+	"embed"
 	"math/rand/v2"
 
 	"github.com/eihigh/miniten"
@@ -14,6 +15,9 @@ const (
 	SceneGameOver Scene = "gameover"
 )
 
+//go:embed assets/*.png
+var fsys embed.FS
+
 var (
 	scene         = SceneTitle
 	game          = Game{}
@@ -26,14 +30,14 @@ func main() {
 }
 
 func draw() {
-	miniten.DrawImage("sky.png", 0, 0)
+	miniten.DrawImageFS(fsys, "assets/sky.png", 0, 0)
 
 	isJustClicked = !isPrevClicked && miniten.IsClicked()
 	isPrevClicked = miniten.IsClicked()
 
 	switch scene {
 	case SceneTitle:
-		miniten.DrawImage("gopher.png", 100, 0)
+		miniten.DrawImageFS(fsys, "assets/gopher.png", 100, 0)
 		miniten.Println("はねるGopherくんゲーム")
 		miniten.Println("クリックでスタート")
 		if isJustClicked {
@@ -130,7 +134,7 @@ func (g *Gopher) Jump() {
 }
 
 func (g Gopher) Draw() {
-	miniten.DrawImage("gopher.png", int(g.x), int(g.y))
+	miniten.DrawImageFS(fsys, "assets/gopher.png", int(g.x), int(g.y))
 }
 
 func (g Gopher) GetCenter() Point {
@@ -193,8 +197,8 @@ func NewWall() Wall {
 }
 
 func (w *Wall) Draw() {
-	miniten.DrawImage("wall.png", int(w.topPipe.x), int(w.topPipe.y))
-	miniten.DrawImage("wall.png", int(w.bottomPipe.x), int(w.bottomPipe.y))
+	miniten.DrawImageFS(fsys, "assets/wall.png", int(w.topPipe.x), int(w.topPipe.y))
+	miniten.DrawImageFS(fsys, "assets/wall.png", int(w.bottomPipe.x), int(w.bottomPipe.y))
 }
 
 func (w *Wall) Update() {

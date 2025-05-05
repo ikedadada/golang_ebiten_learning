@@ -1,4 +1,4 @@
-module miniten
+module jump_game_miniten
 
 go 1.24.2
 
