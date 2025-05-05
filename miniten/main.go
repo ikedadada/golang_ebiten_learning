@@ -1,11 +1,12 @@
 package main
 
-import "github.com/eihigh/miniten"
+import (
+	"math/rand/v2"
 
-var (
-	y  = 0.0
-	vy = 0.0
+	"github.com/eihigh/miniten"
 )
+
+var xs = []int{100, 200, 300}
 
 func main() {
 	miniten.Run(draw)
@@ -13,14 +14,10 @@ func main() {
 
 func draw() {
 	if miniten.IsClicked() {
-		vy = -10
+		xs = append(xs, rand.N(640))
 	}
-	vy += 0.5
-	y += vy
-
-	if 360 < y {
-		y = 360
-		vy = 0
+	for i := range xs {
+		xs[i] += 1
+		miniten.DrawImage("gopher.png", xs[i], 0)
 	}
-	miniten.DrawImage("gopher.png", 0, int(y))
 }
