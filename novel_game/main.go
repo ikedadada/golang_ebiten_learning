@@ -6,6 +6,7 @@ import (
 	_ "image/jpeg"
 
 	"github.com/hajimehoshi/ebiten/v2"
+	"github.com/hajimehoshi/ebiten/v2/inpututil"
 	"github.com/hajimehoshi/ebiten/v2/text/v2"
 )
 
@@ -45,6 +46,16 @@ func loadFont(path string) (*text.GoTextFaceSource, error) {
 		return nil, err
 	}
 	return src, nil
+}
+
+func IsClicked() bool {
+	if inpututil.IsMouseButtonJustPressed(ebiten.MouseButtonLeft) {
+		return true
+	}
+	if len(inpututil.AppendJustPressedTouchIDs(nil)) != 0 {
+		return true
+	}
+	return false
 }
 
 func newGame() (*game, error) {
@@ -118,6 +129,10 @@ func (g *game) Draw(screen *ebiten.Image) {
 		textop.GeoM.Translate(10, float64(screen.Bounds().Dy()*2/3))
 		textop.GeoM.Translate(float64(g.X), float64(g.Y))
 		screen.DrawImage(g.Image, &textop.DrawImageOptions)
+	}
+
+	if IsClicked() {
+		g.ticks = 0
 	}
 
 }
