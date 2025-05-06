@@ -4,19 +4,29 @@ import (
 	"embed"
 	"image"
 	_ "image/jpeg"
+	"strings"
 
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/inpututil"
 	"github.com/hajimehoshi/ebiten/v2/text/v2"
 )
 
+type chara struct {
+	name string
+}
+
 type game struct {
-	ticks     int
 	bg        *ebiten.Image
 	person    *ebiten.Image
 	cat       *ebiten.Image
 	messageBG *ebiten.Image
 	fontFace  *text.GoTextFace
+
+	scenario    []string
+	progress    int
+	message     string
+	leftCamera  chara
+	rightCamera chara
 }
 
 //go:embed assets/*
@@ -90,11 +100,38 @@ func newGame() (*game, error) {
 		Source: fontSrc,
 		Size:   30,
 	}
+
+	g.scenario = []string{
+		"rightChara=cat",
+		"吾輩は猫である。",
+		"名前はまだない。",
+		"leftChara=person",
+		"吾輩はここで始めて人間というものを見た。",
+	}
 	return g, nil
 }
 
 func (g *game) Update() error {
-	g.ticks++
+	if IsClicked() {
+		s := g.scenario[g.progress]
+		if g.progress < len(g.scenario)-1 {
+			g.progress++
+		}
+
+		before, after, found := strings.Cut(s, "=")
+		if found {
+			switch before {
+			case "leftChara":
+				g.leftCamera.name = after
+			case "rightChara":
+				g.rightCamera.name = after
+			default:
+				g.message = s
+			}
+		} else {
+			g.message = s
+		}
+	}
 	return nil
 }
 
@@ -104,12 +141,22 @@ func (g *game) Draw(screen *ebiten.Image) {
 	screen.DrawImage(g.bg, op)
 
 	op = &ebiten.DrawImageOptions{}
-	op.GeoM.Scale(-1, 1)
-	op.GeoM.Translate(float64(screen.Bounds().Dx()), 0)
-	screen.DrawImage(g.person, op)
+	switch g.leftCamera.name {
+	case "cat":
+		screen.DrawImage(g.cat, op)
+	case "person":
+		screen.DrawImage(g.person, op)
+	}
 
 	op = &ebiten.DrawImageOptions{}
-	screen.DrawImage(g.cat, op)
+	op.GeoM.Scale(-1, 1)
+	op.GeoM.Translate(float64(screen.Bounds().Dx()), 0)
+	switch g.rightCamera.name {
+	case "cat":
+		screen.DrawImage(g.cat, op)
+	case "person":
+		screen.DrawImage(g.person, op)
+	}
 
 	op = &ebiten.DrawImageOptions{}
 	op.GeoM.Scale(float64(screen.Bounds().Dx())/float64(g.messageBG.Bounds().Dx()), float64(screen.Bounds().Dy()/3)/float64(g.messageBG.Bounds().Dy()))
@@ -118,23 +165,10 @@ func (g *game) Draw(screen *ebiten.Image) {
 	screen.DrawImage(g.messageBG, op)
 
 	textop := &text.DrawOptions{}
+	textop.GeoM.Translate(10, float64(screen.Bounds().Dy()*2/3))
 	textop.ColorScale.Scale(0, 0, 0, 1)
 	textop.LineSpacing = 30 * 1.5
-	glyphs := text.AppendGlyphs(nil, "吾輩は猫である。名前はまだない。", g.fontFace, &textop.LayoutOptions)
-
-	count := g.ticks / 5
-	count = count % len(glyphs)
-	for _, g := range glyphs[:count] {
-		textop.GeoM.Reset()
-		textop.GeoM.Translate(10, float64(screen.Bounds().Dy()*2/3))
-		textop.GeoM.Translate(float64(g.X), float64(g.Y))
-		screen.DrawImage(g.Image, &textop.DrawImageOptions)
-	}
-
-	if IsClicked() {
-		g.ticks = 0
-	}
-
+	text.Draw(screen, g.message, g.fontFace, textop)
 }
 
 func (g *game) Layout(outsideWidth, outsideHeight int) (int, int) {
