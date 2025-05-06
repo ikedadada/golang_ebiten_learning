@@ -6,14 +6,16 @@ import (
 	_ "image/jpeg"
 
 	"github.com/hajimehoshi/ebiten/v2"
-	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
+	"github.com/hajimehoshi/ebiten/v2/text/v2"
 )
 
 type game struct {
+	ticks     int
 	bg        *ebiten.Image
 	person    *ebiten.Image
 	cat       *ebiten.Image
 	messageBG *ebiten.Image
+	fontFace  *text.GoTextFace
 }
 
 //go:embed assets/*
@@ -30,6 +32,19 @@ func loadImage(path string) (*ebiten.Image, error) {
 		return nil, err
 	}
 	return ebiten.NewImageFromImage(i), nil
+}
+
+func loadFont(path string) (*text.GoTextFaceSource, error) {
+	f, err := fsys.Open(path)
+	if err != nil {
+		return nil, err
+	}
+	defer f.Close()
+	src, err := text.NewGoTextFaceSource(f)
+	if err != nil {
+		return nil, err
+	}
+	return src, nil
 }
 
 func newGame() (*game, error) {
@@ -55,10 +70,20 @@ func newGame() (*game, error) {
 		return nil, err
 	}
 	g.messageBG = img
+
+	fontSrc, err := loadFont("assets/font/NotoSansJP-VariableFont_wght.ttf")
+	if err != nil {
+		return nil, err
+	}
+	g.fontFace = &text.GoTextFace{
+		Source: fontSrc,
+		Size:   30,
+	}
 	return g, nil
 }
 
 func (g *game) Update() error {
+	g.ticks++
 	return nil
 }
 
@@ -81,7 +106,20 @@ func (g *game) Draw(screen *ebiten.Image) {
 	op.ColorScale.ScaleAlpha(0.5)
 	screen.DrawImage(g.messageBG, op)
 
-	ebitenutil.DebugPrint(screen, "Hello, World!")
+	textop := &text.DrawOptions{}
+	textop.ColorScale.Scale(0, 0, 0, 1)
+	textop.LineSpacing = 30 * 1.5
+	glyphs := text.AppendGlyphs(nil, "吾輩は猫である。名前はまだない。", g.fontFace, &textop.LayoutOptions)
+
+	count := g.ticks / 5
+	count = count % len(glyphs)
+	for _, g := range glyphs[:count] {
+		textop.GeoM.Reset()
+		textop.GeoM.Translate(10, float64(screen.Bounds().Dy()*2/3))
+		textop.GeoM.Translate(float64(g.X), float64(g.Y))
+		screen.DrawImage(g.Image, &textop.DrawImageOptions)
+	}
+
 }
 
 func (g *game) Layout(outsideWidth, outsideHeight int) (int, int) {
