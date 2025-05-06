@@ -16,11 +16,8 @@ type chara struct {
 }
 
 type game struct {
-	bg        *ebiten.Image
-	person    *ebiten.Image
-	cat       *ebiten.Image
-	messageBG *ebiten.Image
-	fontFace  *text.GoTextFace
+	images   map[string]*ebiten.Image
+	fontFace *text.GoTextFace
 
 	scenario    []string
 	progress    int
@@ -70,27 +67,20 @@ func IsClicked() bool {
 
 func newGame() (*game, error) {
 	g := &game{}
-	img, err := loadImage("assets/bg.jpg")
-	if err != nil {
-		return nil, err
+	imageNames := []string{
+		"bg.jpg",
+		"person.png",
+		"cat.png",
+		"message-bg.png",
 	}
-	g.bg = img
-	img, err = loadImage("assets/person.png")
-	if err != nil {
-		return nil, err
+	g.images = make(map[string]*ebiten.Image, len(imageNames))
+	for _, name := range imageNames {
+		img, err := loadImage("assets/" + name)
+		if err != nil {
+			return nil, err
+		}
+		g.images[name] = img
 	}
-	g.person = img
-	img, err = loadImage("assets/cat.png")
-	if err != nil {
-		return nil, err
-	}
-	g.cat = img
-
-	img, err = loadImage("assets/message-bg.png")
-	if err != nil {
-		return nil, err
-	}
-	g.messageBG = img
 
 	fontSrc, err := loadFont("assets/font/NotoSansJP-VariableFont_wght.ttf")
 	if err != nil {
@@ -102,10 +92,10 @@ func newGame() (*game, error) {
 	}
 
 	g.scenario = []string{
-		"rightChara=cat",
+		"rightChara=cat.png",
 		"吾輩は猫である。",
 		"名前はまだない。",
-		"leftChara=person",
+		"leftChara=person.png",
 		"吾輩はここで始めて人間というものを見た。",
 	}
 	return g, nil
@@ -137,32 +127,26 @@ func (g *game) Update() error {
 
 func (g *game) Draw(screen *ebiten.Image) {
 	op := &ebiten.DrawImageOptions{}
-	op.GeoM.Scale(float64(screen.Bounds().Dx())/float64(g.bg.Bounds().Dx()), float64(screen.Bounds().Dy())/float64(g.bg.Bounds().Dy()))
-	screen.DrawImage(g.bg, op)
+	op.GeoM.Scale(float64(screen.Bounds().Dx())/float64(g.images["bg.jpg"].Bounds().Dx()), float64(screen.Bounds().Dy())/float64(g.images["bg.jpg"].Bounds().Dy()))
+	screen.DrawImage(g.images["bg.jpg"], op)
 
-	op = &ebiten.DrawImageOptions{}
-	switch g.leftCamera.name {
-	case "cat":
-		screen.DrawImage(g.cat, op)
-	case "person":
-		screen.DrawImage(g.person, op)
+	if g.leftCamera.name != "" {
+		op = &ebiten.DrawImageOptions{}
+		screen.DrawImage(g.images[g.leftCamera.name], op)
+	}
+
+	if g.rightCamera.name != "" {
+		op = &ebiten.DrawImageOptions{}
+		op.GeoM.Scale(-1, 1)
+		op.GeoM.Translate(float64(screen.Bounds().Dx()), 0)
+		screen.DrawImage(g.images[g.rightCamera.name], op)
 	}
 
 	op = &ebiten.DrawImageOptions{}
-	op.GeoM.Scale(-1, 1)
-	op.GeoM.Translate(float64(screen.Bounds().Dx()), 0)
-	switch g.rightCamera.name {
-	case "cat":
-		screen.DrawImage(g.cat, op)
-	case "person":
-		screen.DrawImage(g.person, op)
-	}
-
-	op = &ebiten.DrawImageOptions{}
-	op.GeoM.Scale(float64(screen.Bounds().Dx())/float64(g.messageBG.Bounds().Dx()), float64(screen.Bounds().Dy()/3)/float64(g.messageBG.Bounds().Dy()))
+	op.GeoM.Scale(float64(screen.Bounds().Dx())/float64(g.images["message-bg.png"].Bounds().Dx()), float64(screen.Bounds().Dy()/3)/float64(g.images["message-bg.png"].Bounds().Dy()))
 	op.GeoM.Translate(0, float64(screen.Bounds().Dy()*2/3))
 	op.ColorScale.ScaleAlpha(0.5)
-	screen.DrawImage(g.messageBG, op)
+	screen.DrawImage(g.images["message-bg.png"], op)
 
 	textop := &text.DrawOptions{}
 	textop.GeoM.Translate(10, float64(screen.Bounds().Dy()*2/3))
