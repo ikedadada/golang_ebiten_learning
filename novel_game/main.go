@@ -12,18 +12,21 @@ import (
 )
 
 type chara struct {
-	name string
+	name                string
+	dx, dy              float64
+	animStart, duration int
 }
 
 type game struct {
+	ticks    int
 	images   map[string]*ebiten.Image
 	fontFace *text.GoTextFace
 
 	scenario    []string
 	progress    int
 	message     string
-	leftCamera  chara
-	rightCamera chara
+	leftCamera  *chara
+	rightCamera *chara
 }
 
 //go:embed assets/*
@@ -102,6 +105,7 @@ func newGame() (*game, error) {
 }
 
 func (g *game) Update() error {
+	g.ticks++
 	if IsClicked() {
 		s := g.scenario[g.progress]
 		if g.progress < len(g.scenario)-1 {
@@ -112,9 +116,19 @@ func (g *game) Update() error {
 		if found {
 			switch before {
 			case "leftChara":
-				g.leftCamera.name = after
+				g.leftCamera = &chara{
+					name:      after,
+					dx:        300,
+					animStart: g.ticks,
+					duration:  30,
+				}
 			case "rightChara":
-				g.rightCamera.name = after
+				g.rightCamera = &chara{
+					name:      after,
+					dx:        -300,
+					animStart: g.ticks,
+					duration:  30,
+				}
 			default:
 				g.message = s
 			}
@@ -130,15 +144,30 @@ func (g *game) Draw(screen *ebiten.Image) {
 	op.GeoM.Scale(float64(screen.Bounds().Dx())/float64(g.images["bg.jpg"].Bounds().Dx()), float64(screen.Bounds().Dy())/float64(g.images["bg.jpg"].Bounds().Dy()))
 	screen.DrawImage(g.images["bg.jpg"], op)
 
-	if g.leftCamera.name != "" {
+	if g.leftCamera != nil {
 		op = &ebiten.DrawImageOptions{}
+		elapsed := g.ticks - g.leftCamera.animStart
+		t := float64(elapsed) / float64(g.leftCamera.duration)
+		if t > 1 {
+			t = 1
+		}
+		t = 2*t - t*t
+		op.GeoM.Translate(0-g.leftCamera.dx*(1-t), 0-g.leftCamera.dy*(1-t))
+		op.ColorScale.ScaleAlpha(float32(t))
 		screen.DrawImage(g.images[g.leftCamera.name], op)
 	}
 
-	if g.rightCamera.name != "" {
+	if g.rightCamera != nil {
 		op = &ebiten.DrawImageOptions{}
+		elapsed := g.ticks - g.rightCamera.animStart
+		t := float64(elapsed) / float64(g.rightCamera.duration)
+		if t > 1 {
+			t = 1
+		}
+		t = 2*t - t*t
+		op.ColorScale.ScaleAlpha(float32(t))
 		op.GeoM.Scale(-1, 1)
-		op.GeoM.Translate(float64(screen.Bounds().Dx()), 0)
+		op.GeoM.Translate(float64(screen.Bounds().Dx())-g.rightCamera.dx*(1-t), 0-g.rightCamera.dy*(1-t))
 		screen.DrawImage(g.images[g.rightCamera.name], op)
 	}
 
