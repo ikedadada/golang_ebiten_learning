@@ -14,6 +14,7 @@ const (
 
 type game struct {
 	dm     DrawManager
+	cm     CharactorManager
 	width  int
 	height int
 }
@@ -56,12 +57,17 @@ func NewGame(fsys embed.FS) (ebiten.Game, error) {
 
 	g.dm = NewDrawManager(fontFace, tileset)
 
+	// Create the character manager
+	g.cm = NewCharactorManager(g.dm, 4, 6)
+
 	return g, nil
 }
 
 func (g *game) Update() error {
+	g.cm.Update()
 	return nil
 }
+
 func (g *game) Draw(screen *ebiten.Image) {
 	layor := [][]int{
 		{1, 2, 2, 2, 2, 2, 2, 2, 2, 3},
@@ -76,6 +82,8 @@ func (g *game) Draw(screen *ebiten.Image) {
 		{55, 56, 56, 56, 56, 56, 56, 56, 56, 57},
 	}
 	g.dm.DrawLayor(screen, layor, 0, 0)
+
+	g.cm.Draw(screen)
 
 	g.dm.DrawText(screen, "Hello, Ebiten!", g.width/(GRID_SIZE*2), g.height/(GRID_SIZE*2), text.AlignCenter)
 }
