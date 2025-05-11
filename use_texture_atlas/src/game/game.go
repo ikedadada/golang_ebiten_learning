@@ -13,8 +13,7 @@ const (
 )
 
 type game struct {
-	tm     TextManager
-	im     ImageManager
+	dm     DrawManager
 	width  int
 	height int
 }
@@ -38,10 +37,10 @@ func NewGame(fsys embed.FS) (ebiten.Game, error) {
 	if err != nil {
 		return nil, err
 	}
-	g.tm = NewTextManager(&text.GoTextFace{
+	fontFace := &text.GoTextFace{
 		Source: font,
 		Size:   GRID_SIZE,
-	})
+	}
 
 	// Load the images
 	f, err = fsys.Open("assets/tilemap_packed.png")
@@ -53,7 +52,9 @@ func NewGame(fsys embed.FS) (ebiten.Game, error) {
 	if err != nil {
 		return nil, err
 	}
-	g.im = NewImageManager(ebiten.NewImageFromImage(img))
+	tileset := ebiten.NewImageFromImage(img)
+
+	g.dm = NewDrawManager(fontFace, tileset)
 
 	return g, nil
 }
@@ -74,9 +75,9 @@ func (g *game) Draw(screen *ebiten.Image) {
 		{28, 29, 29, 29, 29, 29, 29, 29, 29, 30},
 		{55, 56, 56, 56, 56, 56, 56, 56, 56, 57},
 	}
-	g.im.DrawLayor(screen, layor, 0, 0)
+	g.dm.DrawLayor(screen, layor, 0, 0)
 
-	g.tm.DrawText(screen, "Hello, Ebiten!", g.width/(GRID_SIZE*2), g.height/(GRID_SIZE*2), text.AlignCenter)
+	g.dm.DrawText(screen, "Hello, Ebiten!", g.width/(GRID_SIZE*2), g.height/(GRID_SIZE*2), text.AlignCenter)
 }
 
 func (g *game) Layout(outsideWidth, outsideHeight int) (int, int) {
